@@ -9,7 +9,6 @@ app = Flask(__name__)
 CHANNEL_USERNAME = "@downloadvideo77"
 subscribed_users = set()
 
-# فحص الاشتراك في القناة
 def is_user_subscribed(user_id):
     url = f"https://api.telegram.org/bot{TOKEN}/getChatMember"
     params = {
@@ -24,27 +23,18 @@ def is_user_subscribed(user_id):
     except:
         return False
 
-# رسالة ترحيب عند /start
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.from_user.id
     if is_user_subscribed(user_id):
-        bot.reply_to(message, "🎉 شكراً على الاشتراك في القناة ✅
-يمكنك الآن استخدام البوت بكل سهولة.")
+        bot.reply_to(message, "🎉 شكراً على الاشتراك في القناة ✅\nيمكنك الآن استخدام البوت بكل سهولة.")
         subscribed_users.add(user_id)
     else:
-        bot.reply_to(message, "مرحبًا بكم في أسرع بوت لتحميل الفيديو من أي منصة في برامج التواصل:
-يوتيوب – تيك توك – فيسبوك – سناب شات وغيرها...
+        bot.reply_to(message, "مرحبًا بكم في أسرع بوت لتحميل الفيديو من أي منصة في برامج التواصل الاجتماعي:\nيوتيوب – تيك توك – فيسبوك – سناب شات وغيرها...\n\n📢 لاستخدام البوت، الرجاء الاشتراك في القناة أولاً:\n👉 https://t.me/downloadvideo77\n\nبعد الاشتراك، أرسل /start من جديد ✅")
 
-📢 لاستخدام البوت، الرجاء الاشتراك في القناة أولاً:
-👉 https://t.me/downloadvideo77
-
-بعد الاشتراك، أرسل /start من جديد ✅")
-
-# أمر إرسال رسالة جماعية
 @bot.message_handler(commands=['broadcast'])
 def broadcast(message):
-    if message.from_user.id ==  message.chat.id:  # فقط من الرسائل الخاصة
+    if message.from_user.id == message.chat.id:
         if not subscribed_users:
             bot.reply_to(message, "⚠️ لا يوجد مشتركين مسجلين بعد.")
             return
@@ -55,8 +45,7 @@ def broadcast(message):
         count = 0
         for user_id in subscribed_users:
             try:
-                bot.send_message(user_id, f"📢 رسالة إدارية:
-{msg}")
+                bot.send_message(user_id, f"📢 رسالة إدارية:\n{msg}")
                 count += 1
             except:
                 pass
@@ -75,10 +64,8 @@ def index():
 
 if __name__ == "__main__":
     import threading
-
     def polling():
         bot.infinity_polling()
-
     thread = threading.Thread(target=polling)
     thread.start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
