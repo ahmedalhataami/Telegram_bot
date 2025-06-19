@@ -1,15 +1,66 @@
 import telebot
 import os
 from flask import Flask, request
+import requests
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
-
 app = Flask(__name__)
+CHANNEL_USERNAME = "@downloadvideo77"
+subscribed_users = set()
 
+# فحص الاشتراك في القناة
+def is_user_subscribed(user_id):
+    url = f"https://api.telegram.org/bot{TOKEN}/getChatMember"
+    params = {
+        "chat_id": CHANNEL_USERNAME,
+        "user_id": user_id
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    try:
+        status = data['result']['status']
+        return status in ['member', 'administrator', 'creator']
+    except:
+        return False
+
+# رسالة ترحيب عند /start
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.reply_to(message, "أهلاً بك! هذا بوت مجاني يعمل 24/7 ✨")
+    user_id = message.from_user.id
+    if is_user_subscribed(user_id):
+        bot.reply_to(message, "🎉 شكراً على الاشتراك في القناة ✅
+يمكنك الآن استخدام البوت بكل سهولة.")
+        subscribed_users.add(user_id)
+    else:
+        bot.reply_to(message, "مرحبًا بكم في أسرع بوت لتحميل الفيديو من أي منصة في برامج التواصل:
+يوتيوب – تيك توك – فيسبوك – سناب شات وغيرها...
+
+📢 لاستخدام البوت، الرجاء الاشتراك في القناة أولاً:
+👉 https://t.me/downloadvideo77
+
+بعد الاشتراك، أرسل /start من جديد ✅")
+
+# أمر إرسال رسالة جماعية
+@bot.message_handler(commands=['broadcast'])
+def broadcast(message):
+    if message.from_user.id ==  message.chat.id:  # فقط من الرسائل الخاصة
+        if not subscribed_users:
+            bot.reply_to(message, "⚠️ لا يوجد مشتركين مسجلين بعد.")
+            return
+        msg = message.text.replace('/broadcast', '').strip()
+        if not msg:
+            bot.reply_to(message, "✏️ الرجاء كتابة الرسالة بعد الأمر /broadcast")
+            return
+        count = 0
+        for user_id in subscribed_users:
+            try:
+                bot.send_message(user_id, f"📢 رسالة إدارية:
+{msg}")
+                count += 1
+            except:
+                pass
+        bot.reply_to(message, f"✅ تم إرسال الرسالة إلى {count} مشترك.")
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def receive_update():
